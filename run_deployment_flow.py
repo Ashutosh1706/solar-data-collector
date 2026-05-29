@@ -3,6 +3,11 @@ import subprocess
 import sys
 import time
 
+# Ensure Git and GitHub CLI are in the PATH environment variable
+extra_paths = [r"C:\Program Files\Git\cmd", r"C:\Program Files\GitHub CLI"]
+existing_path = os.environ.get("PATH", "")
+os.environ["PATH"] = ";".join(extra_paths) + ";" + existing_path
+
 git_path = r"C:\Program Files\Git\cmd\git.exe"
 gh_path = r"C:\Program Files\GitHub CLI\gh.exe"
 
@@ -16,49 +21,54 @@ def main():
     subprocess.run([git_path, "add", "."], capture_output=True)
     subprocess.run([git_path, "commit", "-m", "Prepare for Render persistent deployment"], capture_output=True)
 
-    # 2. Spawn gh auth login
-    print("[+] Starting GitHub authorization...", flush=True)
-    p = subprocess.Popen(
-        [gh_path, "auth", "login", "-p", "https", "-h", "github.com", "--web"],
-        stdin=subprocess.PIPE,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        text=True,
-        bufsize=1
-    )
-
-    # Read stderr in a loop to find the code
-    code = None
-    url = "https://github.com/login/device"
+    # 2. Check if already authenticated
+    auth_check = subprocess.run([gh_path, "auth", "status"], capture_output=True, text=True)
+    is_logged_in = "Logged in to github.com" in auth_check.stderr or "Logged in to github.com" in auth_check.stdout
     
-    # Read stderr line-by-line
-    while True:
-        line = p.stderr.readline()
-        if not line:
-            break
-        print(f"GH_LOG: {line.strip()}", flush=True)
-        if "one-time code:" in line:
-            code = line.split("one-time code:")[-1].strip()
-            print(f"\n[CODE_FOUND] Code: {code}", flush=True)
-            print(f"[URL_FOUND] URL: {url}\n", flush=True)
-            print("Please go to the URL above, enter the code, and click 'Authorize'. Waiting...", flush=True)
-            break
+    if is_logged_in:
+        print("[+] Already authenticated with GitHub. Skipping login prompt.", flush=True)
+    else:
+        # Spawn gh auth login
+        print("[+] Starting GitHub authorization...", flush=True)
+        p = subprocess.Popen(
+            [gh_path, "auth", "login", "-p", "https", "-h", "github.com", "--web"],
+            stdin=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            bufsize=1
+        )
 
-    # Wait for the login process to complete
-    # Keep reading remaining stderr/stdout to avoid hang
-    stdout_data, stderr_data = p.communicate()
-    
-    # Print any extra logs
-    if stdout_data:
-        print(f"GH_STDOUT: {stdout_data}", flush=True)
-    if stderr_data:
-        print(f"GH_STDERR: {stderr_data}", flush=True)
+        # Read stderr in a loop to find the code
+        code = None
+        url = "https://github.com/login/device"
+        
+        # Read stderr line-by-line
+        while True:
+            line = p.stderr.readline()
+            if not line:
+                break
+            print(f"GH_LOG: {line.strip()}", flush=True)
+            if "one-time code:" in line:
+                code = line.split("one-time code:")[-1].strip()
+                print(f"\n[CODE_FOUND] Code: {code}", flush=True)
+                print(f"[URL_FOUND] URL: {url}\n", flush=True)
+                print("Please go to the URL above, enter the code, and click 'Authorize'. Waiting...", flush=True)
+                break
 
-    if p.returncode != 0:
-        print(f"[-] GitHub authentication failed with return code {p.returncode}.", flush=True)
-        sys.exit(1)
+        # Wait for the login process to complete
+        stdout_data, stderr_data = p.communicate()
+        
+        if stdout_data:
+            print(f"GH_STDOUT: {stdout_data}", flush=True)
+        if stderr_data:
+            print(f"GH_STDERR: {stderr_data}", flush=True)
 
-    print("\n[+] GitHub authentication successful!", flush=True)
+        if p.returncode != 0:
+            print(f"[-] GitHub authentication failed with return code {p.returncode}.", flush=True)
+            sys.exit(1)
+
+        print("\n[+] GitHub authentication successful!", flush=True)
 
     # Get username
     username_res = subprocess.run([gh_path, "api", "user", "--jq", ".login"], capture_output=True, text=True)
