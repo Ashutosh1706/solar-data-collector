@@ -1,0 +1,12 @@
+# Local SQLite Database
+data_collector.db
+
+# Python Cache
+__pycache__/
+*.pyc
+
+# Local Archives and Logs
+*.zip
+.system_generated/
+.tempmediaStorage/
+scratch/

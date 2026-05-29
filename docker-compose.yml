@@ -1,0 +1,46 @@
+version: '3.8'
+
+services:
+  # 1. PostgreSQL Database Container
+  db:
+    image: postgres:15-alpine
+    container_name: nmtronics_postgres
+    restart: always
+    environment:
+      POSTGRES_USER: nmtronics_user
+      POSTGRES_PASSWORD: nmtronics_password
+      POSTGRES_DB: nmtronics_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./database/schema.sql:/docker-entrypoint-initdb.d/schema.sql
+
+  # 2. FastAPI Backend Container
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    container_name: nmtronics_backend
+    restart: always
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./data_collector.db:/app/data_collector.db
+    depends_on:
+      - db
+
+  # 3. Nginx Frontend Container
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    container_name: nmtronics_frontend
+    restart: always
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+
+volumes:
+  pgdata:

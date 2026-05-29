@@ -1,0 +1,944 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NMTronics Solar Cell Production Data Platform</title>
+    <!-- Modern typography from Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- FontAwesome for industrial icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="dark-theme">
+
+
+
+    <!-- Main App Layout Container -->
+    <div class="app-container">
+        
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar">
+            <div class="brand">
+                <i class="fa-solid fa-sheet-plastic brand-icon"></i>
+                <div class="brand-text">
+                    <h2>NMTronics</h2>
+                    <span>BY ASHUTOSH TRIPATHI</span>
+                </div>
+            </div>
+            
+            <nav class="nav-menu">
+                <button class="nav-btn active" data-target="entry-view">
+                    <i class="fa-solid fa-file-excel"></i> Data Entry Sheet
+                </button>
+                <button class="nav-btn" data-target="daily-tool-view">
+                    <i class="fa-solid fa-chart-line"></i> Site Daily Sheet
+                </button>
+                <button class="nav-btn" data-target="compare-view">
+                    <i class="fa-solid fa-arrows-left-right"></i> Site Comparison
+                </button>
+                <button class="nav-btn" data-target="monthly-view">
+                    <i class="fa-solid fa-calendar-days"></i> Date Range Report
+                </button>
+                <button class="nav-btn" data-target="reports-view">
+                    <i class="fa-solid fa-clock-rotate-left"></i> Sheets History
+                </button>
+                <button class="nav-btn" data-target="maintenance-view">
+                    <i class="fa-solid fa-user-gear"></i> NMT Maintenance
+                </button>
+                <button class="nav-btn" data-target="config-view" id="nav-btn-config">
+                    <i class="fa-solid fa-gears"></i> System Settings
+                </button>
+            </nav>
+            
+            <div class="sidebar-footer">
+                <div class="user-profile">
+                    <div class="avatar" id="user-avatar">OP</div>
+                    <div class="user-info">
+                        <h4 id="user-display-name">Dave Operator</h4>
+                        <span id="user-display-role">Operator</span>
+                    </div>
+                    <button id="btn-logout" class="logout-btn" title="Sign Out">
+                        <i class="fa-solid fa-power-off"></i>
+                    </button>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Panel Content -->
+        <main class="main-content">
+            <!-- Header bar -->
+            <header class="top-bar">
+                <button id="mobile-menu-toggle" class="mobile-menu-btn screen-only" aria-label="Toggle Sidebar">
+                    <i class="fa-solid fa-bars"></i>
+                </button>
+                <h1 class="page-title" id="page-title-label">Data Entry Sheet</h1>
+                <div class="meta-widgets">
+                    <div class="time-widget">
+                        <i class="fa-solid fa-clock"></i>
+                        <span id="current-time">Loading Clock...</span>
+                    </div>
+                    <div class="status-widget">
+                        <span class="status-dot online"></span>
+                        <span>MES Server Connected</span>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Container for pages -->
+            <div class="page-container">
+                
+                <!-- View 1: Data Entry Sheet -->
+                <section id="entry-view" class="view-panel active">
+                    <!-- Filters & Selectors -->
+                    <div class="card filter-card">
+                        <div class="filter-grid">
+                            <div class="filter-group">
+                                <label for="select-site"><i class="fa-solid fa-building"></i> Customer Site</label>
+                                <select id="select-site">
+                                    <!-- Populated dynamically -->
+                                </select>
+                            </div>
+                            
+                            <div class="filter-group">
+                                <label for="select-machine"><i class="fa-solid fa-microchip"></i> Automation Machine</label>
+                                <select id="select-machine">
+                                    <option value="">-- Choose Site First --</option>
+                                </select>
+                            </div>
+                            
+                            <div class="filter-group">
+                                <label for="select-shift"><i class="fa-solid fa-business-time"></i> Shift Group</label>
+                                <select id="select-shift">
+                                    <option value="Shift A">Shift A (06:00 AM - 02:00 PM)</option>
+                                    <option value="Shift B">Shift B (02:00 PM - 10:00 PM)</option>
+                                    <option value="Shift C">Shift C (10:00 PM - 06:00 AM)</option>
+                                    <option value="Custom Shift">Custom Shift (Select hours...)</option>
+                                </select>
+                            </div>
+
+                            <!-- Custom Shift Timings (Hidden by default) -->
+                            <div id="custom-shift-time-wrap" class="filter-group hidden" style="grid-column: span 2; display: flex; gap: 15px;">
+                                <div style="flex: 1;">
+                                    <label for="select-custom-start"><i class="fa-solid fa-clock"></i> Start Hour</label>
+                                    <select id="select-custom-start" style="background: #000; border: 1px solid var(--border-color);">
+                                        <option value="0">12:00 AM (00:00)</option>
+                                        <option value="1">01:00 AM (01:00)</option>
+                                        <option value="2">02:00 AM (02:00)</option>
+                                        <option value="3">03:00 AM (03:00)</option>
+                                        <option value="4">04:00 AM (04:00)</option>
+                                        <option value="5">05:00 AM (05:00)</option>
+                                        <option value="6">06:00 AM (06:00)</option>
+                                        <option value="7">07:00 AM (07:00)</option>
+                                        <option value="8">08:00 AM (08:00)</option>
+                                        <option value="9">09:00 AM (09:00)</option>
+                                        <option value="10" selected>10:00 AM (10:00)</option>
+                                        <option value="11">11:00 AM (11:00)</option>
+                                        <option value="12">12:00 PM (12:00)</option>
+                                        <option value="13">01:00 PM (13:00)</option>
+                                        <option value="14">02:00 PM (14:00)</option>
+                                        <option value="15">03:00 PM (15:00)</option>
+                                        <option value="16">04:00 PM (16:00)</option>
+                                        <option value="17">05:00 PM (17:00)</option>
+                                        <option value="18">06:00 PM (18:00)</option>
+                                        <option value="19">07:00 PM (19:00)</option>
+                                        <option value="20">08:00 PM (20:00)</option>
+                                        <option value="21">09:00 PM (21:00)</option>
+                                        <option value="22">10:00 PM (22:00)</option>
+                                        <option value="23">11:00 PM (23:00)</option>
+                                    </select>
+                                </div>
+                                <div style="flex: 1;">
+                                    <label for="select-custom-end"><i class="fa-solid fa-clock"></i> End Hour</label>
+                                    <select id="select-custom-end" style="background: #000; border: 1px solid var(--border-color);">
+                                        <option value="0">12:00 AM (00:00)</option>
+                                        <option value="1">01:00 AM (01:00)</option>
+                                        <option value="2">02:00 AM (02:00)</option>
+                                        <option value="3">03:00 AM (03:00)</option>
+                                        <option value="4">04:00 AM (04:00)</option>
+                                        <option value="5">05:00 AM (05:00)</option>
+                                        <option value="6">06:00 AM (06:00)</option>
+                                        <option value="7">07:00 AM (07:00)</option>
+                                        <option value="8">08:00 AM (08:00)</option>
+                                        <option value="9">09:00 AM (09:00)</option>
+                                        <option value="10">10:00 AM (10:00)</option>
+                                        <option value="11">11:00 AM (11:00)</option>
+                                        <option value="12">12:00 PM (12:00)</option>
+                                        <option value="13">01:00 PM (13:00)</option>
+                                        <option value="14">02:00 PM (14:00)</option>
+                                        <option value="15">03:00 PM (15:00)</option>
+                                        <option value="16">04:00 PM (16:00)</option>
+                                        <option value="17">05:00 PM (17:00)</option>
+                                        <option value="18" selected>06:00 PM (18:00)</option>
+                                        <option value="19">07:00 PM (19:00)</option>
+                                        <option value="20">08:00 PM (20:00)</option>
+                                        <option value="21">09:00 PM (21:00)</option>
+                                        <option value="22">10:00 PM (22:00)</option>
+                                        <option value="23">11:00 PM (23:00)</option>
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <div class="filter-group">
+                                <label for="input-date"><i class="fa-solid fa-calendar"></i> Operation Date</label>
+                                <input type="date" id="input-date">
+                            </div>
+                            
+                            <div class="filter-actions">
+                                <button id="btn-load-sheet" class="primary-btn btn-block">
+                                    <i class="fa-solid fa-cloud-arrow-down"></i> Open Sheet
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Main Production Sheet Grid Panel -->
+                    <div id="sheet-container" class="sheet-container hidden">
+                        <!-- Print Only Header -->
+                        <div class="print-only-header">
+                            <h2>NMTronics Solar Cell Production Sheet</h2>
+                            <div class="print-meta-grid">
+                                <div><strong>Site Name:</strong> <span id="print-site-val"></span></div>
+                                <div><strong>Machine/Process:</strong> <span id="print-machine-val"></span></div>
+                                <div><strong>Shift Group:</strong> <span id="print-shift-val"></span></div>
+                                <div><strong>Operation Date:</strong> <span id="print-date-val"></span></div>
+                                <div><strong>Production Person Name:</strong> <span id="print-operator-val"></span></div>
+                                <div><strong>NMT Engineer Name:</strong> <span id="print-engineer-val"></span></div>
+                            </div>
+                        </div>
+
+                        <!-- Sheet Metadata Info -->
+                        <div class="sheet-meta-bar card">
+                            <div class="meta-inputs">
+                                <div class="meta-input-group">
+                                    <label>Production Person Name</label>
+                                    <input type="text" id="operator-name" placeholder="Production Person Name">
+                                </div>
+                                <div class="meta-input-group">
+                                    <label>NMT Engineer Name</label>
+                                    <input type="text" id="engineer-name" placeholder="NMT Engineer Name">
+                                </div>
+                            </div>
+                            <div class="save-status-container">
+                                <div id="save-status" class="save-badge saved">
+                                    <i class="fa-solid fa-check-circle"></i> Saved
+                                </div>
+                                <button id="btn-quick-summary-entry" class="primary-btn" style="background: var(--primary-orange); color: #000;">
+                                    <i class="fa-solid fa-pencil"></i> Quick Summary Entry
+                                </button>
+                                <button id="btn-grid-export-excel" class="primary-btn">
+                                    <i class="fa-solid fa-file-excel"></i> Export Excel
+                                </button>
+                                <button id="btn-grid-export-csv" class="secondary-btn">
+                                    <i class="fa-solid fa-file-csv"></i> Export CSV
+                                </button>
+                                <button id="btn-export-pdf" class="secondary-btn">
+                                    <i class="fa-solid fa-print"></i> Print / PDF
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Excel-Like Grid -->
+                        <div class="card grid-card">
+                            <div class="grid-scrollable">
+                                <table id="excel-grid" class="excel-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Hour</th>
+                                            <th class="non-input">Process Details</th>
+                                            <th class="editable-col">Total Input (Qty)</th>
+                                            <th class="editable-col">Breakage (Qty)</th>
+                                            
+                                            <th class="non-input">Total Output (Good Wafers)</th>
+                                            <th class="non-input text-red">Breakage % (on Output)</th>
+                                            
+                                            <th class="editable-col">Downtime (Mins)</th>
+                                            <th class="editable-col">Downtime Reason / Hour Remarks</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="grid-rows-body">
+                                        <!-- Populated dynamically via JS -->
+                                    </tbody>
+                                    <tfoot>
+                                        <tr class="totals-row">
+                                            <td>TOTALS</td>
+                                            <td>-</td>
+                                            <td id="total-input">0</td>
+                                            <td id="total-breakage">0</td>
+                                            
+                                            <td id="total-good" style="color: var(--primary-cyan); font-weight:700;">0</td>
+                                            <td id="avg-breakage-pct" style="color: var(--primary-red);">0.00%</td>
+                                            
+                                            <td id="total-downtime">0</td>
+                                            <td class="non-input">Calculated summary values</td>
+                                        </tr>
+                                    </tfoot>
+                                </table>
+                            </div>
+                            <div class="grid-helper-text">
+                                <i class="fa-solid fa-circle-info"></i> Excel Spreadsheet Shortcuts: Use <b>Arrow Keys</b> to navigate between inputs, <b>Enter</b> to move down, <b>Tab</b> to move right. Totals, yield rates, and breakage percentages are auto-calculated dynamically. Changes are saved automatically.
+                            </div>
+                        </div>
+
+                        <!-- Remarks and Details Section -->
+                        <div class="remarks-grid">
+                            <div class="card remarks-card">
+                                <h3><i class="fa-solid fa-comment-dots text-cyan"></i> Production Person Notes</h3>
+                                <textarea id="remarks-operator" rows="3" placeholder="Production person notes, line handover remarks..." class="screen-only"></textarea>
+                                <div id="print-remarks-operator-val" class="print-only font-mono" style="font-size: 11px; white-space: pre-wrap; color: black; border: 1px solid #cbd5e1; padding: 10px; border-radius: 6px; min-height: 60px; text-align: left; width: 100%;">No notes logged.</div>
+                            </div>
+                            <div class="card remarks-card">
+                                <h3><i class="fa-solid fa-user-shield text-green"></i> NMT Engineer Notes</h3>
+                                <textarea id="remarks-engineer" rows="3" placeholder="NMT engineer checks, yield deviations..." class="screen-only"></textarea>
+                                <div id="print-remarks-engineer-val" class="print-only font-mono" style="font-size: 11px; white-space: pre-wrap; color: black; border: 1px solid #cbd5e1; padding: 10px; border-radius: 6px; min-height: 60px; text-align: left; width: 100%;">No checks logged.</div>
+                            </div>
+                            <div class="card remarks-card">
+                                <h3><i class="fa-solid fa-tools text-orange"></i> Maintenance Handover</h3>
+                                <textarea id="remarks-maintenance" rows="3" placeholder="Breakdown interventions, parts replaced..." class="screen-only"></textarea>
+                                <div id="print-remarks-maintenance-val" class="print-only font-mono" style="font-size: 11px; white-space: pre-wrap; color: black; border: 1px solid #cbd5e1; padding: 10px; border-radius: 6px; min-height: 60px; text-align: left; width: 100%;">No maintenance interventions logged.</div>
+                            </div>
+                        </div>
+
+                        <!-- Action Bar -->
+                        <div class="card action-bar">
+                            <button id="btn-save-metadata" class="primary-btn">
+                                <i class="fa-solid fa-save"></i> Save Remarks & Headers
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Placeholder when no sheet is loaded -->
+                    <div id="sheet-placeholder" class="card placeholder-card">
+                        <i class="fa-solid fa-file-excel placeholder-icon animate-pulse-slow"></i>
+                        <h3>No Production Sheet Active</h3>
+                        <p>Select a Customer Site, Machine, Date, and Shift above, then click <b>Open Sheet</b> to open the data entry grid.</p>
+                    </div>
+                </section>
+
+                <!-- View 2: Site Comparison Dashboard -->
+                <section id="compare-view" class="view-panel">
+                    <div class="card filter-card">
+                        <div class="flex-row-wrap" style="display: flex; gap: 20px; align-items: flex-end;">
+                            <div class="filter-group" style="flex: 1; min-width: 200px;">
+                                <label for="compare-site-a">Primary Site (Site A)</label>
+                                <select id="compare-site-a">
+                                    <!-- Populated dynamically -->
+                                </select>
+                            </div>
+                            <div class="filter-group" style="flex: 1; min-width: 200px;">
+                                <label for="compare-site-b">Comparison Site (Site B)</label>
+                                <select id="compare-site-b">
+                                    <!-- Populated dynamically -->
+                                </select>
+                            </div>
+                            <div class="filter-group" style="flex: 1; min-width: 150px;">
+                                <label for="compare-date">Select Date</label>
+                                <input type="date" id="compare-date">
+                            </div>
+                            <button id="btn-run-comparison" class="primary-btn"><i class="fa-solid fa-arrow-right-arrow-left"></i> Run Comparison</button>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <h3 class="mb-3"><i class="fa-solid fa-table-columns text-cyan"></i> Side-by-Side Facility Metrics</h3>
+                        <div class="grid-scrollable">
+                            <table class="excel-table">
+                                <thead>
+                                    <tr>
+                                        <th>Metric Description</th>
+                                        <th id="compare-site-a-header">Site A</th>
+                                        <th id="compare-site-b-header">Site B</th>
+                                        <th>Variance / Difference</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="comparison-table-body">
+                                    <tr><td colspan="4" class="text-secondary" style="text-align: center;">Choose two sites and run comparison to generate analysis.</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- View: Site Daily Sheet Tab -->
+                <section id="daily-tool-view" class="view-panel">
+                    <div class="card filter-card">
+                        <div class="filter-grid" style="grid-template-cols: repeat(auto-fit, minmax(180px, 1fr));">
+                            <div class="filter-group">
+                                <label for="daily-tool-site"><i class="fa-solid fa-building"></i> Customer Site</label>
+                                <select id="daily-tool-site">
+                                    <!-- Populated dynamically -->
+                                </select>
+                            </div>
+                            
+                            <div class="filter-group">
+                                <label for="daily-tool-date"><i class="fa-solid fa-calendar-day"></i> Single Date (Data Entry)</label>
+                                <input type="date" id="daily-tool-date">
+                            </div>
+                            
+                            <div class="filter-group">
+                                <label for="daily-tool-start-date"><i class="fa-solid fa-calendar-days"></i> Range Start Date</label>
+                                <input type="date" id="daily-tool-start-date">
+                            </div>
+                            
+                            <div class="filter-group">
+                                <label for="daily-tool-end-date"><i class="fa-solid fa-calendar-days"></i> Range End Date</label>
+                                <input type="date" id="daily-tool-end-date">
+                            </div>
+                            
+                            <div class="filter-actions" style="display: flex; gap: 8px;">
+                                <button id="btn-load-daily-tool" class="primary-btn" style="flex: 1;">
+                                    <i class="fa-solid fa-folder-open"></i> Open Day
+                                </button>
+                                <button id="btn-load-daily-tool-range" class="secondary-btn" style="flex: 1;">
+                                    <i class="fa-solid fa-magnifying-glass"></i> Load Range
+                                </button>
+                            </div>
+
+                            <!-- Quick range presets row -->
+                            <div class="quick-ranges-row" style="grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; padding: 10px 0 5px 0; border-top: 1px dashed var(--border-color); margin-top: 10px;">
+                                <span style="font-size: 13px; color: var(--text-secondary); font-weight: 500;"><i class="fa-solid fa-clock-rotate-left"></i> Preset Range Options:</span>
+                                <button type="button" class="secondary-btn btn-sm" id="btn-range-today" style="padding: 4px 10px; font-size: 12px; background: #131922; border-color: #2a3447;">Today</button>
+                                <button type="button" class="secondary-btn btn-sm" id="btn-range-yesterday" style="padding: 4px 10px; font-size: 12px; background: #131922; border-color: #2a3447;">Yesterday</button>
+                                <button type="button" class="secondary-btn btn-sm" id="btn-range-this-week" style="padding: 4px 10px; font-size: 12px; background: #131922; border-color: #2a3447;">This Week</button>
+                                <button type="button" class="secondary-btn btn-sm" id="btn-range-last-7" style="padding: 4px 10px; font-size: 12px; background: #131922; border-color: #2a3447;">Last 7 Days</button>
+                                <button type="button" class="secondary-btn btn-sm" id="btn-range-this-month" style="padding: 4px 10px; font-size: 12px; background: #131922; border-color: #2a3447;">This Month</button>
+                                <button type="button" class="secondary-btn btn-sm" id="btn-range-last-30" style="padding: 4px 10px; font-size: 12px; background: #131922; border-color: #2a3447;">Last 30 Days</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Daily Tool Sheet Container -->
+                    <div id="daily-tool-container" class="sheet-container hidden">
+                        <!-- Print Only Header -->
+                        <div class="print-only-header">
+                            <h2>NMTronics Solar Cell Site Daily Report</h2>
+                            <div class="print-meta-grid">
+                                <div><strong>Site Name:</strong> <span id="print-daily-site-val"></span></div>
+                                <div><strong>Report Type:</strong> <span id="print-daily-type-val">Single Day</span></div>
+                                <div><strong>Report Period:</strong> <span id="print-daily-date-val"></span></div>
+                            </div>
+                        </div>
+
+                        <!-- Metadata controls -->
+                        <div class="sheet-meta-bar card">
+                            <div class="meta-inputs">
+                                <h3 id="daily-tool-sheet-title" class="text-cyan font-bold" style="font-size: 14px; text-transform: uppercase;">Tata - Daily Tool Sheet</h3>
+                            </div>
+                            <div class="save-status-container">
+                                <div id="daily-tool-save-status" class="save-badge saved">
+                                    <i class="fa-solid fa-check-circle"></i> Saved
+                                </div>
+                                <button id="btn-daily-tool-add-custom" class="primary-btn" style="background: var(--primary-cyan); color: #000;">
+                                    <i class="fa-solid fa-plus"></i> Add Tool
+                                </button>
+                                <button id="btn-daily-tool-save" class="primary-btn" style="background: var(--primary-green); color: #000;">
+                                    <i class="fa-solid fa-save"></i> Save Sheet
+                                </button>
+                                <button id="btn-daily-export-excel" class="primary-btn">
+                                    <i class="fa-solid fa-file-excel"></i> Export Excel
+                                </button>
+                                <button id="btn-daily-export-csv" class="secondary-btn">
+                                    <i class="fa-solid fa-file-csv"></i> Export CSV
+                                </button>
+                                <button id="btn-daily-export-pdf" class="secondary-btn">
+                                    <i class="fa-solid fa-print"></i> Print / PDF
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Data Entry Table Grid -->
+                        <div class="card grid-card">
+                            <div class="grid-scrollable">
+                                <table id="daily-tool-grid" class="excel-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Tool Name</th>
+                                            <th class="editable-col">Target</th>
+                                            <th class="editable-col">Production (Qty)</th>
+                                            <th class="editable-col">Breakage (Nos)</th>
+                                            <th class="non-input text-green">Breakage (%)</th>
+                                            <th style="width: 80px;" class="screen-only">Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="daily-tool-rows-body">
+                                        <!-- Dynamic inputs -->
+                                    </tbody>
+                                    <tfoot>
+                                        <tr class="totals-row">
+                                            <td>Total Tool Breakage and Rejection %</td>
+                                            <td>-</td>
+                                            <td>-</td>
+                                            <td id="daily-tool-total-breakage">0</td>
+                                            <td id="daily-tool-total-breakage-pct" style="color: var(--primary-red); font-weight:700;">0.00%</td>
+                                            <td class="screen-only">-</td>
+                                        </tr>
+                                    </tfoot>
+                                </table>
+                            </div>
+                            <div class="grid-helper-text screen-only">
+                                <i class="fa-solid fa-circle-info"></i> Spreadsheet Shortcuts: Use <b>Arrow Keys</b> to navigate inputs, <b>Enter</b> to move down, <b>Tab</b> to move right. Changes save automatically.
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Range view container (consolidated multi-day table) -->
+                    <div id="daily-tool-range-container" class="sheet-container hidden">
+                        <!-- Print Only Header -->
+                        <div class="print-only-header">
+                            <h2>NMTronics Solar Cell Consolidated Daily Report</h2>
+                            <div class="print-meta-grid">
+                                <div><strong>Site Name:</strong> <span id="print-daily-range-site-val"></span></div>
+                                <div><strong>Report Type:</strong> <span id="print-daily-range-type-val">Consolidated Range Report</span></div>
+                                <div><strong>Report Period:</strong> <span id="print-daily-range-date-val"></span></div>
+                            </div>
+                        </div>
+                        <div class="sheet-meta-bar card">
+                            <div class="meta-inputs" style="display: flex; flex-direction: column; gap: 4px;">
+                                <h3 id="daily-tool-range-title" class="text-cyan font-bold" style="font-size: 14px; text-transform: uppercase;">Tata - Consolidated Range Sheet</h3>
+                            </div>
+                            <div class="save-status-container">
+                                <button id="btn-daily-range-export-excel" class="primary-btn">
+                                    <i class="fa-solid fa-file-excel"></i> Export Range Excel
+                                </button>
+                                <button id="btn-daily-range-export-csv" class="secondary-btn">
+                                    <i class="fa-solid fa-file-csv"></i> Export Range CSV
+                                </button>
+                                <button id="btn-daily-range-print-pdf" class="secondary-btn">
+                                    <i class="fa-solid fa-print"></i> Print Range PDF
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Toggle Detailed vs Summary -->
+                        <div class="card toggle-bar screen-only" style="margin-bottom: 15px; display: flex; gap: 10px; background: #0c1017; border-color: var(--border-color); padding: 10px;">
+                            <button id="btn-range-view-detailed" class="primary-btn active" style="flex: 1; text-align: center; justify-content: center; height: 36px; padding: 0;">
+                                <i class="fa-solid fa-list" style="margin-right: 6px;"></i> Detailed List View
+                            </button>
+                            <button id="btn-range-view-summary" class="secondary-btn" style="flex: 1; text-align: center; justify-content: center; background: #131922; border-color: #2a3447; height: 36px; padding: 0;">
+                                <i class="fa-solid fa-chart-pie" style="margin-right: 6px;"></i> Aggregated Tool Summary
+                            </button>
+                        </div>
+
+                        <!-- Grid -->
+                        <div class="card grid-card">
+                            <div class="grid-scrollable">
+                                <table id="daily-tool-range-table" class="excel-table">
+                                    <thead id="daily-tool-range-header">
+                                        <tr>
+                                            <th>Date</th>
+                                            <th>Tool Name</th>
+                                            <th>Target</th>
+                                            <th>Production</th>
+                                            <th>Breakage (Nos)</th>
+                                            <th>Breakage (%)</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="daily-tool-range-body">
+                                        <!-- Dynamic rows -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Placeholder -->
+                    <div id="daily-tool-placeholder" class="card placeholder-card">
+                        <i class="fa-solid fa-chart-line placeholder-icon animate-pulse-slow"></i>
+                        <h3>Daily Tool Performance Sheet</h3>
+                        <p>Select a Customer Site and Date above to load the Daily Tool performance sheet, or choose a Date Range to load consolidated history reports.</p>
+                    </div>
+                </section>
+
+                <!-- View 6: Monthly Production Summary -->
+                <section id="monthly-view" class="view-panel">
+                    <div class="card filter-card">
+                        <div class="filter-grid">
+                            <div class="filter-group">
+                                <label for="monthly-site"><i class="fa-solid fa-building"></i> Customer Site</label>
+                                <select id="monthly-site">
+                                    <!-- Populated dynamically -->
+                                </select>
+                            </div>
+                            
+                            <div class="filter-group">
+                                <label for="monthly-machine"><i class="fa-solid fa-microchip"></i> Automation Machine</label>
+                                <select id="monthly-machine">
+                                    <option value="">All Machines</option>
+                                </select>
+                            </div>
+                            
+                            <div class="filter-group">
+                                <label for="monthly-shift"><i class="fa-solid fa-business-time"></i> Shift Group</label>
+                                <select id="monthly-shift">
+                                    <option value="">All Shifts</option>
+                                    <option value="Shift A">Shift A</option>
+                                    <option value="Shift B">Shift B</option>
+                                    <option value="Shift C">Shift C</option>
+                                </select>
+                            </div>
+                            
+                            <div class="filter-group">
+                                <label for="input-start-date"><i class="fa-solid fa-calendar-days"></i> Start Date</label>
+                                <input type="date" id="input-start-date">
+                            </div>
+                            
+                            <div class="filter-group">
+                                <label for="input-end-date"><i class="fa-solid fa-calendar-days"></i> End Date</label>
+                                <input type="date" id="input-end-date">
+                            </div>
+                            
+                            <div class="filter-actions">
+                                <button id="btn-load-monthly" class="primary-btn btn-block">
+                                    <i class="fa-solid fa-magnifying-glass"></i> Generate Report
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Monthly Report Container -->
+                    <div id="monthly-report-container" class="sheet-container hidden">
+                        <!-- Report Controls -->
+                        <div class="sheet-meta-bar card">
+                            <div class="meta-inputs">
+                                <h3 id="monthly-report-title" class="text-cyan font-bold" style="font-size: 14px; text-transform: uppercase;">Production Report</h3>
+                            </div>
+                            <div class="save-status-container">
+                                <button id="btn-monthly-export-excel" class="primary-btn">
+                                    <i class="fa-solid fa-file-excel"></i> Export Excel
+                                </button>
+                                <button id="btn-monthly-export-csv" class="secondary-btn">
+                                    <i class="fa-solid fa-file-csv"></i> Export CSV
+                                </button>
+                                <button id="btn-monthly-print-pdf" class="secondary-btn">
+                                    <i class="fa-solid fa-print"></i> Print / PDF
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Report Grid -->
+                        <div class="card grid-card">
+                            <div class="grid-scrollable">
+                                <table id="monthly-table" class="excel-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Date</th>
+                                            <th>Site</th>
+                                            <th>Machine Name</th>
+                                            <th>Shift</th>
+                                            <th>Total Input (Qty)</th>
+                                            <th>Breakage (Qty)</th>
+                                            
+                                            <th>Total Output (Good)</th>
+                                            <th class="text-red">Breakage % (on Output)</th>
+                                            
+                                            <th class="text-green font-bold">Yield % (on Input)</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="monthly-rows-body">
+                                        <!-- Populated dynamically -->
+                                    </tbody>
+                                    <tfoot>
+                                        <tr class="totals-row">
+                                            <td colspan="4">MONTHLY TOTALS / AVERAGES</td>
+                                            <td id="monthly-total-input">0</td>
+                                            <td id="monthly-total-breakage">0</td>
+                                            
+                                            <td id="monthly-total-good" style="color: var(--primary-cyan); font-weight:700;">0</td>
+                                            <td id="monthly-avg-breakage-pct" style="color: var(--primary-red);">0.00%</td>
+                                            
+                                            <td id="monthly-avg-yield-pct" style="color: var(--primary-green);">0.00%</td>
+                                        </tr>
+                                    </tfoot>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Placeholder when no report is generated -->
+                    <div id="monthly-placeholder" class="card placeholder-card">
+                        <i class="fa-solid fa-calendar-days placeholder-icon animate-pulse-slow"></i>
+                        <h3>No Monthly Report Generated</h3>
+                        <p>Select a Customer Site, Month, and optional filters above, then click <b>Generate Report</b> to run calculations.</p>
+                    </div>
+                </section>
+
+                <!-- View 3: Sheets History & Reports -->
+                <section id="reports-view" class="view-panel">
+                    <div class="card filter-card">
+                        <div class="filter-grid">
+                            <div class="filter-group">
+                                <label for="history-site">Filter by Site</label>
+                                <select id="history-site">
+                                    <option value="">All Sites</option>
+                                    <!-- Loaded dynamically -->
+                                </select>
+                            </div>
+                            <div class="filter-group">
+                                <label for="history-date">Filter by Date</label>
+                                <input type="date" id="history-date">
+                            </div>
+                            <div class="filter-actions" style="grid-column: span 2; display: flex; gap: 10px;">
+                                <button id="btn-search-history" class="primary-btn" style="flex: 1;"><i class="fa-solid fa-search"></i> Query Database</button>
+                                <button id="btn-export-csv" class="secondary-btn" style="flex: 1;"><i class="fa-solid fa-file-csv"></i> Export CSV</button>
+                                <button id="btn-export-excel" class="secondary-btn" style="flex: 1;"><i class="fa-solid fa-file-excel"></i> Export Excel</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card grid-card">
+                        <div class="grid-scrollable">
+                            <table class="excel-table list-table">
+                                <thead>
+                                    <tr>
+                                        <th>Date</th>
+                                        <th>Shift</th>
+                                        <th>Site Name</th>
+                                        <th>Machine Name</th>
+                                        <th>Total Input</th>
+                                        <th>Total Output</th>
+                                        <th>Breakage %</th>
+                                        
+                                        <th>Yield %</th>
+                                        <th>Downtime (Mins)</th>
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="history-table-body">
+                                    <!-- Loaded dynamically -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- View 4: NMT Maintenance Portal -->
+                <section id="maintenance-view" class="view-panel">
+                    <div class="grid-split" style="display: grid; grid-template-cols: 1fr 1fr; gap: 20px;">
+                        
+                        <!-- Submit NMT Comment Form -->
+                        <div class="card">
+                            <h3><i class="fa-solid fa-comment-medical text-cyan"></i> Log NMT Maintenance Work / Comment</h3>
+                            <form id="maintenance-form" style="margin-top: 15px;">
+                                <div class="form-group">
+                                    <label for="maint-site-select">Customer Site</label>
+                                    <select id="maint-site-select" required>
+                                        <!-- Loaded dynamically -->
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="maint-chamber-select">Target Machine / Chamber</label>
+                                    <select id="maint-chamber-select" required>
+                                        <option value="">-- Choose Site First --</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="maint-desc-input">Maintenance Remarks / Action Performed</label>
+                                    <textarea id="maint-desc-input" rows="4" placeholder="Enter work details, adjustments, calibration remarks..." required></textarea>
+                                </div>
+                                <div class="form-group">
+                                    <label for="maint-name-input">Logged By (Tech Name)</label>
+                                    <input type="text" id="maint-name-input" placeholder="Sarah Technician" required>
+                                </div>
+                                <button type="submit" class="primary-btn" style="margin-top: 10px; width: 100%;">
+                                    <i class="fa-solid fa-circle-check"></i> Submit NMT Comment
+                                </button>
+                            </form>
+                        </div>
+
+                        <!-- Comments Log History -->
+                        <div class="card" style="display: flex; flex-direction: column;">
+                            <h3><i class="fa-solid fa-list-check text-green"></i> Logged Maintenance Remarks History</h3>
+                            <div class="comments-log-container" id="comments-log-list" style="flex-grow: 1; overflow-y: auto; margin-top: 15px; max-height: 480px; display: flex; flex-direction: column; gap: 12px;">
+                                <!-- Loaded dynamically via JS -->
+                            </div>
+                        </div>
+
+                    </div>
+                </section>
+
+                <!-- View 5: Settings and Config Portal -->
+                <section id="config-view" class="view-panel">
+                    <div class="config-grid">
+                        <!-- Add Custom Customer Site -->
+                        <div class="card config-card">
+                            <h3><i class="fa-solid fa-building-circle-add text-cyan"></i> Configure Customer Site</h3>
+                            <form id="form-add-site">
+                                <div class="form-group">
+                                    <label>Site Name</label>
+                                    <input type="text" id="site-name-input" placeholder="e.g. Tata Power Solar" required>
+                                </div>
+                                <div class="form-group">
+                                    <label>Location Details</label>
+                                    <input type="text" id="site-location-input" placeholder="e.g. Noida, UP" required>
+                                </div>
+                                <button type="submit" class="primary-btn"><i class="fa-solid fa-plus"></i> Add Customer Site</button>
+                            </form>
+                        </div>
+                        
+                        <!-- Add Custom Machine / Process -->
+                        <div class="card config-card">
+                            <h3><i class="fa-solid fa-toolbox text-green"></i> Configure Machine / Process for Site</h3>
+                            <form id="form-add-machine">
+                                <div class="form-group">
+                                    <label>Link to Customer Site</label>
+                                    <select id="machine-site-select" required>
+                                        <!-- Loaded dynamically -->
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label>Machine Name (e.g., POLY PECVD 4)</label>
+                                    <input type="text" id="machine-name-input" placeholder="TEXTURE 3" required>
+                                </div>
+                                <div class="form-group">
+                                    <label>Process Step Category</label>
+                                    <select id="machine-process-select" required>
+                                        <option value="Texture">Texturing</option>
+                                        <option value="Diffusion">Diffusion</option>
+                                        <option value="BSG">BSG</option>
+                                        <option value="Poly PECVD">Poly PECVD</option>
+                                        <option value="Annealing">Annealing</option>
+                                        <option value="Front PECVD">Front PECVD</option>
+                                        <option value="Rear PECVD">Rear PECVD</option>
+                                        <option value="Printer">Screen Printing</option>
+                                        <option value="Sorter">Sorter</option>
+                                    </select>
+                                </div>
+                                <button type="submit" class="primary-btn"><i class="fa-solid fa-plus"></i> Add Machine Process</button>
+                            </form>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </main>
+    </div>
+
+    <!-- Boat Details Modal -->
+    <div id="boat-modal" class="login-overlay hidden">
+        <div class="login-card" style="width: 480px; max-width: 90%;">
+            <div class="login-header">
+                <i class="fa-solid fa-anchor login-icon"></i>
+                <h2>Boat-wise Breakage</h2>
+                <span id="boat-modal-title">Hour: --:-- to --:--</span>
+            </div>
+            <div class="grid-scrollable" style="max-height: 250px; margin-bottom: 15px;">
+                <table class="excel-table">
+                    <thead>
+                        <tr>
+                            <th>Boat ID</th>
+                            <th>Breakage (Qty)</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="boat-modal-rows">
+                        <!-- Dynamic rows -->
+                    </tbody>
+                </table>
+            </div>
+            <div style="display: flex; gap: 10px; justify-content: space-between;">
+                <button id="btn-add-boat-row" class="secondary-btn" style="flex: 1;"><i class="fa-solid fa-plus"></i> Add Boat</button>
+                <button id="btn-save-boats" class="primary-btn" style="flex: 1;"><i class="fa-solid fa-save"></i> Save</button>
+                <button id="btn-close-boats" class="secondary-btn" style="flex: 1;">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tracks Split Modal -->
+    <div id="track-modal" class="login-overlay hidden">
+        <div class="login-card" style="width: 450px; max-width: 90%;">
+            <div class="login-header">
+                <i class="fa-solid fa-table-cells login-icon"></i>
+                <h2>Track-wise Split</h2>
+                <span id="track-modal-title">Hour: --:-- to --:--</span>
+            </div>
+            <div class="grid-scrollable" style="margin-bottom: 15px;">
+                <table class="excel-table">
+                    <thead>
+                        <tr>
+                            <th>Track Name</th>
+                            <th>Input (Qty)</th>
+                            <th>Breakage (Qty)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Track A</td>
+                            <td><input type="number" id="track-in-A" min="0" value="0" class="grid-cell" style="text-align: right; background: #000; border: 1px solid var(--border-color);"></td>
+                            <td><input type="number" id="track-br-A" min="0" value="0" class="grid-cell text-red" style="text-align: right; background: #000; border: 1px solid var(--border-color);"></td>
+                        </tr>
+                        <tr>
+                            <td>Track B</td>
+                            <td><input type="number" id="track-in-B" min="0" value="0" class="grid-cell" style="text-align: right; background: #000; border: 1px solid var(--border-color);"></td>
+                            <td><input type="number" id="track-br-B" min="0" value="0" class="grid-cell text-red" style="text-align: right; background: #000; border: 1px solid var(--border-color);"></td>
+                        </tr>
+                        <tr>
+                            <td>Track C</td>
+                            <td><input type="number" id="track-in-C" min="0" value="0" class="grid-cell" style="text-align: right; background: #000; border: 1px solid var(--border-color);"></td>
+                            <td><input type="number" id="track-br-C" min="0" value="0" class="grid-cell text-red" style="text-align: right; background: #000; border: 1px solid var(--border-color);"></td>
+                        </tr>
+                        <tr>
+                            <td>Track D</td>
+                            <td><input type="number" id="track-in-D" min="0" value="0" class="grid-cell" style="text-align: right; background: #000; border: 1px solid var(--border-color);"></td>
+                            <td><input type="number" id="track-br-D" min="0" value="0" class="grid-cell text-red" style="text-align: right; background: #000; border: 1px solid var(--border-color);"></td>
+                        </tr>
+                        <tr>
+                            <td>Track E</td>
+                            <td><input type="number" id="track-in-E" min="0" value="0" class="grid-cell" style="text-align: right; background: #000; border: 1px solid var(--border-color);"></td>
+                            <td><input type="number" id="track-br-E" min="0" value="0" class="grid-cell text-red" style="text-align: right; background: #000; border: 1px solid var(--border-color);"></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div style="display: flex; gap: 10px;">
+                <button id="btn-save-tracks" class="primary-btn" style="flex: 1;"><i class="fa-solid fa-save"></i> Save Tracks</button>
+                <button id="btn-close-tracks" class="secondary-btn" style="flex: 1;">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Manual Summary Entry Modal -->
+    <div id="summary-modal" class="login-overlay hidden">
+        <div class="login-card" style="width: 420px; max-width: 90%;">
+            <div class="login-header">
+                <i class="fa-solid fa-calculator login-icon"></i>
+                <h2>Quick Summary Entry</h2>
+                <span>Overwrite hourly entries with shift totals</span>
+            </div>
+            <form id="summary-form">
+                <div class="form-group">
+                    <label for="summary-total-input">Total Input (Qty)</label>
+                    <input type="number" id="summary-total-input" min="0" value="0" required style="background: #000; border: 1px solid var(--border-color);">
+                </div>
+                <div class="form-group">
+                    <label for="summary-total-breakage">Total Breakage (Qty)</label>
+                    <input type="number" id="summary-total-breakage" min="0" value="0" required style="background: #000; border: 1px solid var(--border-color);">
+                </div>
+                <div class="form-group">
+                    <label for="summary-total-good">Total Output (Good Wafers)</label>
+                    <input type="number" id="summary-total-good" min="0" value="0" required style="background: #000; border: 1px solid var(--border-color);">
+                </div>
+                <div class="form-group">
+                    <label for="summary-total-downtime">Total Downtime (Mins)</label>
+                    <input type="number" id="summary-total-downtime" min="0" value="0" required style="background: #000; border: 1px solid var(--border-color);">
+                </div>
+                <div class="form-group">
+                    <label for="summary-downtime-reason">Downtime Reason / Shift Remarks</label>
+                    <input type="text" id="summary-downtime-reason" placeholder="e.g. Conveyor roller jam cleared" style="background: #000; border: 1px solid var(--border-color);">
+                </div>
+                <div class="form-group">
+                    <label for="summary-remarks">Production Person Notes</label>
+                    <textarea id="summary-remarks" rows="2" placeholder="General summary remarks..." style="background: #000; border: 1px solid var(--border-color);"></textarea>
+                </div>
+                <div style="display: flex; gap: 10px; margin-top: 15px;">
+                    <button type="submit" class="primary-btn" style="flex: 1;"><i class="fa-solid fa-save"></i> Save Summary</button>
+                    <button type="button" id="btn-close-summary" class="secondary-btn" style="flex: 1;">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="app.js?v=9"></script>
+</body>
+</html>
+
