@@ -112,13 +112,13 @@
                         </div>
                         <div class="card kpi-card" style="background: linear-gradient(135deg, rgba(34, 197, 94, 0.15) 0%, rgba(34, 197, 94, 0.02) 100%); border-left: 4px solid var(--primary-green);">
                             <div class="kpi-icon" style="color: var(--primary-green); font-size: 28px; margin-bottom: 8px;"><i class="fa-solid fa-circle-check"></i></div>
-                            <div class="kpi-title" style="color: var(--text-secondary); font-size: 13px; text-transform: uppercase;">Good Wafers</div>
-                            <div class="kpi-value" id="kpi-total-good" style="font-size: 24px; font-weight: 700; color: var(--text-primary); margin-top: 4px;">0</div>
+                            <div class="kpi-title" style="color: var(--text-secondary); font-size: 13px; text-transform: uppercase;">Overall Yield</div>
+                            <div class="kpi-value" id="kpi-avg-yield" style="font-size: 24px; font-weight: 700; color: var(--text-primary); margin-top: 4px;">0.00%</div>
                         </div>
                         <div class="card kpi-card" style="background: linear-gradient(135deg, rgba(239, 68, 68, 0.15) 0%, rgba(239, 68, 68, 0.02) 100%); border-left: 4px solid var(--primary-red);">
                             <div class="kpi-icon" style="color: var(--primary-red); font-size: 28px; margin-bottom: 8px;"><i class="fa-solid fa-triangle-exclamation"></i></div>
-                            <div class="kpi-title" style="color: var(--text-secondary); font-size: 13px; text-transform: uppercase;">Avg Breakage Rate</div>
-                            <div class="kpi-value" id="kpi-avg-breakage" style="font-size: 24px; font-weight: 700; color: var(--text-primary); margin-top: 4px;">0.00%</div>
+                            <div class="kpi-title" style="color: var(--text-secondary); font-size: 13px; text-transform: uppercase;">Total Breakages</div>
+                            <div class="kpi-value" id="kpi-total-breakage" style="font-size: 24px; font-weight: 700; color: var(--text-primary); margin-top: 4px;">0</div>
                         </div>
                         <div class="card kpi-card" style="background: linear-gradient(135deg, rgba(249, 115, 22, 0.15) 0%, rgba(249, 115, 22, 0.02) 100%); border-left: 4px solid var(--primary-orange);">
                             <div class="kpi-icon" style="color: var(--primary-orange); font-size: 28px; margin-bottom: 8px;"><i class="fa-solid fa-clock"></i></div>
@@ -141,10 +141,16 @@
                                 <canvas id="chart-yield-trends"></canvas>
                             </div>
                         </div>
-                        <div class="card" style="grid-column: span 1;">
+                        <div class="card">
                             <h3><i class="fa-solid fa-chart-pie text-orange"></i> Downtime Distribution</h3>
                             <div class="chart-container" style="position: relative; height: 300px; width: 100%; margin-top: 15px;">
                                 <canvas id="chart-downtime-causes"></canvas>
+                            </div>
+                        </div>
+                        <div class="card">
+                            <h3><i class="fa-solid fa-chart-line text-red"></i> Downtime Trends (Minutes)</h3>
+                            <div class="chart-container" style="position: relative; height: 300px; width: 100%; margin-top: 15px;">
+                                <canvas id="chart-downtime-trends"></canvas>
                             </div>
                         </div>
                         

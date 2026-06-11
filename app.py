@@ -4,7 +4,7 @@ import shutil
 import uuid
 from datetime import datetime, date, timedelta
 from typing import List, Optional
-from fastapi import FastAPI, HTTPException, Depends, File, UploadFile, Form
+from fastapi import FastAPI, HTTPException, Depends, File, UploadFile, Form, Request
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
@@ -98,6 +98,17 @@ class PostgresConnWrapper:
 
     def close(self):
         self.conn.close()
+
+def get_client_ip(request: Request) -> str:
+    x_forwarded_for = request.headers.get("x-forwarded-for")
+    if x_forwarded_for:
+        return x_forwarded_for.split(",")[0].strip()
+    x_real_ip = request.headers.get("x-real-ip")
+    if x_real_ip:
+        return x_real_ip.strip()
+    if request.client:
+        return request.client.host
+    return "127.0.0.1"
 
 def get_db_conn():
     if DATABASE_URL:
@@ -217,6 +228,15 @@ def init_db():
         content TEXT NOT NULL,
         image_path TEXT,
         timestamp TEXT NOT NULL
+    )
+    """)
+
+    # 5e. Author IP lock table
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS author_ips (
+        author TEXT PRIMARY KEY,
+        ip_address TEXT NOT NULL,
+        registered_at TEXT NOT NULL
     )
     """)
 
@@ -777,11 +797,23 @@ def get_analytics():
     """)
     yield_trends = [dict(row) for row in cursor.fetchall()]
 
+    # Downtime trends by date
+    cursor.execute("""
+    SELECT r.date, SUM(h.downtime_minutes) as total_downtime
+    FROM production_records r
+    JOIN hourly_entries h ON r.id = h.production_record_id
+    GROUP BY r.date
+    ORDER BY r.date ASC
+    LIMIT 15
+    """)
+    downtime_trends = [dict(row) for row in cursor.fetchall()]
+
     conn.close()
     return {
         "site_performance": site_performance,
         "downtime_reasons": downtime_reasons,
-        "yield_trends": yield_trends
+        "yield_trends": yield_trends,
+        "downtime_trends": downtime_trends
     }
 
 @app.post("/api/sites")
@@ -1050,6 +1082,7 @@ def delete_rca_report(doc_id: int):
 # ----------------- ANNOUNCEMENTS FEED ENDPOINTS -----------------
 @app.post("/api/announcements")
 async def post_announcement(
+    request: Request,
     author: str = Form(...),
     content: str = Form(...),
     image: Optional[UploadFile] = File(None)
@@ -1057,6 +1090,29 @@ async def post_announcement(
     conn = get_db_conn()
     cursor = conn.cursor()
     try:
+        # Enforce name locking to client IP
+        clean_author = author.strip()
+        author_key = clean_author.lower()
+        client_ip = get_client_ip(request)
+        
+        cursor.execute("SELECT ip_address FROM author_ips WHERE author = ?", (author_key,))
+        row = cursor.fetchone()
+        if row:
+            registered_ip = row["ip_address"]
+            if registered_ip != client_ip:
+                conn.close()
+                raise HTTPException(
+                    status_code=403, 
+                    detail=f"The author name '{clean_author}' is locked to a different system to prevent impersonation."
+                )
+        else:
+            # Register this name to this IP
+            cursor.execute("""
+            INSERT INTO author_ips (author, ip_address, registered_at)
+            VALUES (?, ?, ?)
+            """, (author_key, client_ip, datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
+            conn.commit()
+
         image_filename = None
         if image and image.filename:
             ext = os.path.splitext(image.filename)[1]
@@ -1069,10 +1125,12 @@ async def post_announcement(
         cursor.execute("""
         INSERT INTO announcements (author, content, image_path, timestamp)
         VALUES (?, ?, ?, ?)
-        """, (author, content, image_filename, timestamp))
+        """, (clean_author, content, image_filename, timestamp))
         conn.commit()
         conn.close()
         return {"status": "success", "message": "Announcement posted successfully"}
+    except HTTPException as he:
+        raise he
     except Exception as e:
         conn.close()
         raise HTTPException(status_code=500, detail=str(e))

@@ -2640,6 +2640,7 @@ function initMobileMenu() {
 let chartProduction = null;
 let chartBreakage = null;
 let chartDowntime = null;
+let chartDowntimeTrends = null;
 
 function loadDashboardData() {
     fetch(`${API_BASE}/api/analytics/dashboard`)
@@ -2662,12 +2663,12 @@ function loadDashboardData() {
             });
 
             const totalGood = totalProd - totalBroken - totalRejected;
-            const avgBreakage = totalGood > 0 ? (totalBroken / totalGood) * 100 : 0;
+            const avgYield = totalProd > 0 ? (totalGood / totalProd) * 100 : 0;
 
             // Update UI
             document.getElementById("kpi-total-production").textContent = totalProd.toLocaleString();
-            document.getElementById("kpi-total-good").textContent = totalGood.toLocaleString();
-            document.getElementById("kpi-avg-breakage").textContent = avgBreakage.toFixed(2) + "%";
+            document.getElementById("kpi-avg-yield").textContent = avgYield.toFixed(2) + "%";
+            document.getElementById("kpi-total-breakage").textContent = totalBroken.toLocaleString();
             document.getElementById("kpi-total-downtime").textContent = totalDowntime.toLocaleString() + " min";
 
             // 2. Render Charts
@@ -2683,11 +2684,13 @@ function renderDashboardCharts(data) {
     const ctxProd = document.getElementById("chart-site-production").getContext("2d");
     const ctxYield = document.getElementById("chart-yield-trends").getContext("2d");
     const ctxDowntime = document.getElementById("chart-downtime-causes").getContext("2d");
+    const ctxDowntimeTrends = document.getElementById("chart-downtime-trends").getContext("2d");
 
     // Destory existing charts
     if (chartProduction) chartProduction.destroy();
     if (chartBreakage) chartBreakage.destroy();
     if (chartDowntime) chartDowntime.destroy();
+    if (chartDowntimeTrends) chartDowntimeTrends.destroy();
 
     // Chart 1: Site Production
     const labelsProd = data.site_performance.map(s => s.site_name.replace(" Solar", "").replace(" Energies", ""));
@@ -2776,6 +2779,34 @@ function renderDashboardCharts(data) {
                     position: 'right',
                     labels: { color: 'var(--text-secondary)', font: { size: 10 } }
                 }
+            }
+        }
+    });
+
+    // Chart 4: Downtime Trends (by Date)
+    const labelsDowntimeTrends = data.downtime_trends.map(t => t.date);
+    const datasetDowntimeTrends = data.downtime_trends.map(t => t.total_downtime);
+
+    chartDowntimeTrends = new Chart(ctxDowntimeTrends, {
+        type: 'line',
+        data: {
+            labels: labelsDowntimeTrends,
+            datasets: [{
+                label: 'Total Downtime (Minutes)',
+                data: datasetDowntimeTrends,
+                borderColor: 'var(--primary-orange)',
+                backgroundColor: 'rgba(249, 115, 22, 0.05)',
+                borderWidth: 2,
+                fill: true,
+                tension: 0.3
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: 'var(--text-secondary)' } },
+                x: { grid: { display: false }, ticks: { color: 'var(--text-secondary)' } }
             }
         }
     });
@@ -2986,7 +3017,12 @@ function initAnnouncements() {
                 method: 'POST',
                 body: formData
             })
-            .then(res => res.json())
+            .then(res => {
+                if (!res.ok) {
+                    return res.json().then(err => { throw new Error(err.detail || "Failed to publish announcement") });
+                }
+                return res.json();
+            })
             .then(() => {
                 showToast("Announcement published!", "success");
                 postForm.reset();
@@ -2995,7 +3031,7 @@ function initAnnouncements() {
             })
             .catch(err => {
                 console.error("Error posting announcement:", err);
-                showToast("Failed to publish announcement", "error");
+                showToast(err.message, "error");
             });
         });
     }
