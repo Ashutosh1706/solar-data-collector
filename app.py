@@ -331,6 +331,78 @@ def init_db():
         
         cursor.executemany("INSERT INTO machines (name, process_type, site_id) VALUES (?, ?, ?)", machines)
         conn.commit()
+        
+        # Seed some mock production sheets for Tata TEXTURE 1 and Diffusion 1
+        print("Seeding past sheets...")
+        today = date.today()
+        shift_hours = {
+            "Shift A": ["06:00 - 07:00", "07:00 - 08:00", "08:00 - 09:00", "09:00 - 10:00", "10:00 - 11:00", "11:00 - 12:00", "12:00 - 13:00", "13:00 - 14:00"],
+            "Shift B": ["14:00 - 15:00", "15:00 - 16:00", "16:00 - 17:00", "17:00 - 18:00", "18:00 - 19:00", "19:00 - 20:00", "20:00 - 21:00", "21:00 - 22:00"],
+            "Shift C": ["22:00 - 23:00", "23:00 - 00:00", "00:00 - 01:00", "01:00 - 02:00", "02:00 - 03:00", "03:00 - 04:00", "04:00 - 05:00", "05:00 - 06:00"]
+        }
+        
+        # Select first 4 machines
+        cursor.execute("SELECT id, site_id, name FROM machines LIMIT 4")
+        machines_seeded = cursor.fetchall()
+        
+        import random
+        for offset in range(3, 0, -1):
+            target_date = (today - timedelta(days=offset)).isoformat()
+            for mach in machines_seeded:
+                for shift, hours in shift_hours.items():
+                    cursor.execute("""
+                    INSERT INTO production_records (site_id, machine_id, date, shift, operator_name, engineer_name, remarks_operator, remarks_engineer)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                    """, (
+                        mach["site_id"], mach["id"], target_date, shift,
+                        "Operator Dave", "Process Engineer Lee",
+                        "Normal shift operations completed.", "Yield metrics within specified target."
+                    ))
+                    record_id = cursor.lastrowid
+                    
+                    tot_in = 0
+                    tot_br = 0
+                    tot_re = 0
+                    for hr in hours:
+                        h_in = random.randint(2800, 3200)
+                        h_br = random.randint(4, 15)
+                        h_re = random.randint(8, 20)
+                        h_dt = random.choice([0, 0, 0, 0, 0, 15]) 
+                        h_dtr = "Conveyor jam cleared" if h_dt > 0 else ""
+                        
+                        tot_in += h_in
+                        tot_br += h_br
+                        tot_re += h_re
+                        
+                        cursor.execute("""
+                        INSERT INTO hourly_entries (production_record_id, hour_label, total_input, breakage_count, rejection_count, downtime_minutes, downtime_reason)
+                        VALUES (?, ?, ?, ?, ?, ?, ?)
+                        """, (record_id, hr, h_in, h_br, h_re, h_dt, h_dtr))
+                    
+                    tot_good = tot_in - tot_br - tot_re
+                    
+                    # Yield, Breakage & Rejection rates computed against OUTPUT (Good Wafers)
+                    y_pct = round((tot_good / tot_in) * 100, 2) if tot_in > 0 else 0
+                    b_pct = round((tot_br / tot_good) * 100, 2) if tot_good > 0 else 0
+                    r_pct = round((tot_re / tot_good) * 100, 2) if tot_good > 0 else 0
+                    
+                    cursor.execute("""
+                    UPDATE production_records SET
+                        total_production = ?, good_wafers = ?, broken_wafers = ?, rejected_wafers = ?,
+                        yield_percentage = ?, breakage_percentage = ?, rejection_percentage = ?
+                    WHERE id = ?
+                    """, (tot_in, tot_good, tot_br, tot_re, y_pct, b_pct, r_pct, record_id))
+                    
+        # Seed mock maintenance comments
+        cursor.execute("SELECT id, site_id, id as mach_id FROM machines LIMIT 3")
+        m_rows = cursor.fetchall()
+        for idx, m_row in enumerate(m_rows):
+            cursor.execute("""
+            INSERT INTO maintenance_comments (site_id, machine_id, comment, logged_by, logged_at)
+            VALUES (?, ?, ?, ?, ?)
+            """, (m_row["site_id"], m_row["mach_id"], f"NMT Team completed weekly preventative alignment for conveyor on line {idx+1}.", "Sarah Technician", datetime.now().isoformat()))
+            
+        conn.commit()
     conn.close()
 
 # Pydantic Schemas

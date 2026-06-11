@@ -2652,10 +2652,28 @@ function loadDashboardData() {
             let totalRejected = 0;
             let totalDowntime = 0;
 
+            // Calculate Performance Leaders
+            let topSiteName = "None";
+            let topSiteVal = 0;
+            let bestYieldSiteName = "None";
+            let bestYieldVal = 0;
+
             data.site_performance.forEach(s => {
                 totalProd += s.total_prod || 0;
                 totalBroken += s.total_broken || 0;
                 totalRejected += s.total_rejected || 0;
+
+                if (s.total_prod > topSiteVal) {
+                    topSiteVal = s.total_prod;
+                    topSiteName = s.site_name;
+                }
+                
+                const sGood = s.total_prod - s.total_broken - s.total_rejected;
+                const sYield = s.total_prod > 0 ? (sGood / s.total_prod) * 100 : 0;
+                if (sYield > bestYieldVal) {
+                    bestYieldVal = sYield;
+                    bestYieldSiteName = s.site_name;
+                }
             });
 
             data.downtime_reasons.forEach(d => {
@@ -2670,6 +2688,17 @@ function loadDashboardData() {
             document.getElementById("kpi-avg-yield").textContent = avgYield.toFixed(2) + "%";
             document.getElementById("kpi-total-breakage").textContent = totalBroken.toLocaleString();
             document.getElementById("kpi-total-downtime").textContent = totalDowntime.toLocaleString() + " min";
+
+            // Update Leaders
+            const elTopProducer = document.getElementById("leader-top-producer");
+            const elTopProducerVal = document.getElementById("leader-top-producer-val");
+            const elBestYield = document.getElementById("leader-best-yield");
+            const elBestYieldVal = document.getElementById("leader-best-yield-val");
+
+            if (elTopProducer) elTopProducer.textContent = topSiteName.replace(" Solar", "").replace(" Energies", "");
+            if (elTopProducerVal) elTopProducerVal.textContent = topSiteVal.toLocaleString();
+            if (elBestYield) elBestYield.textContent = bestYieldSiteName.replace(" Solar", "").replace(" Energies", "");
+            if (elBestYieldVal) elBestYieldVal.textContent = bestYieldVal.toFixed(2) + "%";
 
             // 2. Render Charts
             renderDashboardCharts(data);

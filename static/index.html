@@ -153,9 +153,30 @@
                                 <canvas id="chart-downtime-trends"></canvas>
                             </div>
                         </div>
+                    </div>
+
+                    <!-- Widgets Grid -->
+                    <div class="widgets-grid" style="display: grid; grid-template-columns: 1.5fr 1fr; gap: 20px; margin-bottom: 20px;">
                         
+                        <!-- Site Performance Leaders Card -->
+                        <div class="card" style="display: flex; flex-direction: column;">
+                            <h3><i class="fa-solid fa-trophy text-cyan"></i> Site Performance Leaders</h3>
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 20px; flex: 1; align-items: center;">
+                                <div style="background: rgba(255,255,255,0.01); border: 1px solid var(--border-color); padding: 20px; border-radius: 8px; border-left: 4px solid var(--primary-cyan); display: flex; flex-direction: column; justify-content: center; min-height: 100px;">
+                                    <span class="text-secondary" style="font-size: 11px; text-transform: uppercase; letter-spacing: 1px;">Top Producer</span>
+                                    <h4 id="leader-top-producer" style="font-size: 20px; margin: 10px 0; color: var(--text-primary); font-weight: 600;">-</h4>
+                                    <p style="font-size: 13px; color: var(--primary-cyan); margin: 0; font-weight: 500;"><i class="fa-solid fa-industry"></i> <span id="leader-top-producer-val">0</span> wafers</p>
+                                </div>
+                                <div style="background: rgba(255,255,255,0.01); border: 1px solid var(--border-color); padding: 20px; border-radius: 8px; border-left: 4px solid var(--primary-green); display: flex; flex-direction: column; justify-content: center; min-height: 100px;">
+                                    <span class="text-secondary" style="font-size: 11px; text-transform: uppercase; letter-spacing: 1px;">Highest Yield Site</span>
+                                    <h4 id="leader-best-yield" style="font-size: 20px; margin: 10px 0; color: var(--text-primary); font-weight: 600;">-</h4>
+                                    <p style="font-size: 13px; color: var(--primary-green); margin: 0; font-weight: 500;"><i class="fa-solid fa-chart-line"></i> <span id="leader-best-yield-val">0.00%</span> yield</p>
+                                </div>
+                            </div>
+                        </div>
+
                         <!-- Dashboard Widget: Announcements summary -->
-                        <div class="card" style="display: flex; flex-direction: column; max-height: 380px;">
+                        <div class="card" style="display: flex; flex-direction: column; max-height: 250px;">
                             <h3><i class="fa-solid fa-bullhorn text-cyan"></i> Latest Announcements</h3>
                             <div id="home-announcements-feed" style="flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; margin-top: 15px; padding-right: 5px;">
                                 <!-- Populated dynamically -->
