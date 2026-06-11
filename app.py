@@ -773,7 +773,7 @@ def get_analytics():
     SELECT s.name as site_name, SUM(r.total_production) as total_prod, SUM(r.broken_wafers) as total_broken, SUM(r.rejected_wafers) as total_rejected
     FROM production_records r
     JOIN sites s ON r.site_id = s.id
-    GROUP BY r.site_id
+    GROUP BY r.site_id, s.name
     """)
     site_performance = [dict(row) for row in cursor.fetchall()]
     
