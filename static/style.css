@@ -1083,3 +1083,187 @@ input[type=number] {
         width: 100% !important;
     }
 }
+
+/* ==========================================================================
+   HOMEPAGE, DOCUMENTS PORTAL, & ANNOUNCEMENTS FEED STYLES
+   ========================================================================== */
+
+/* Dashboard Home Cards */
+.kpi-card {
+    padding: 20px;
+    border-radius: 12px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.kpi-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.3), 0 0 1px 1px rgba(255, 255, 255, 0.1);
+}
+
+.charts-grid .card {
+    padding: 24px;
+    border-radius: 14px;
+}
+
+.charts-grid h3 {
+    font-size: 13px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 6px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* Document & Updates Shared Layout */
+.updates-layout {
+    margin-top: 10px;
+}
+
+/* SOP & RCA Badge Styling */
+.doc-badge {
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-size: 9px;
+    font-weight: 700;
+    text-transform: uppercase;
+    display: inline-block;
+    letter-spacing: 0.5px;
+}
+
+.doc-badge-sop {
+    background: rgba(0, 240, 255, 0.08);
+    color: var(--primary-cyan);
+    border: 1px solid rgba(0, 240, 255, 0.2);
+}
+
+.doc-badge-rca {
+    background: rgba(255, 153, 0, 0.08);
+    color: var(--primary-orange);
+    border: 1px solid rgba(255, 153, 0, 0.2);
+}
+
+/* Twitter-like Announcements feed cards */
+.announcement-card {
+    background: rgba(255, 255, 255, 0.01);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 16px;
+    display: flex;
+    gap: 14px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.announcement-card:hover {
+    background: rgba(255, 255, 255, 0.03);
+    border-color: var(--primary-cyan);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+    transform: translateY(-2px);
+}
+
+.announcement-avatar {
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--primary-cyan) 0%, var(--primary-orange) 100%);
+    color: var(--bg-dark);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 15px;
+    flex-shrink: 0;
+    box-shadow: 0 0 10px rgba(0, 240, 255, 0.1);
+}
+
+.announcement-body {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.announcement-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.announcement-author {
+    font-weight: 600;
+    color: var(--text-primary);
+    font-size: 14px;
+    letter-spacing: 0.2px;
+}
+
+.announcement-time {
+    font-size: 11px;
+    color: var(--text-muted);
+}
+
+.announcement-text {
+    font-size: 13px;
+    color: var(--text-secondary);
+    line-height: 1.5;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+.announcement-media {
+    margin-top: 6px;
+    border-radius: 8px;
+    overflow: hidden;
+    max-height: 250px;
+    border: 1px solid var(--border-color);
+}
+
+.announcement-media img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+/* Mini Announcement Cards for Dashboard Home */
+.mini-announcement-card {
+    background: rgba(255, 255, 255, 0.015);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    transition: all 0.2s ease;
+}
+
+.mini-announcement-card:hover {
+    background: rgba(255, 255, 255, 0.03);
+    border-color: rgba(0, 240, 255, 0.2);
+}
+
+.mini-announcement-header {
+    display: flex;
+    justify-content: space-between;
+    font-size: 11px;
+}
+
+.mini-announcement-author {
+    font-weight: 600;
+    color: var(--primary-cyan);
+}
+
+.mini-announcement-time {
+    color: var(--text-muted);
+}
+
+.mini-announcement-text {
+    font-size: 12px;
+    color: var(--text-secondary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+

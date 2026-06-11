@@ -1,8 +1,10 @@
 import os
 import sqlite3
+import shutil
+import uuid
 from datetime import datetime, date, timedelta
 from typing import List, Optional
-from fastapi import FastAPI, HTTPException, Depends
+from fastapi import FastAPI, HTTPException, Depends, File, UploadFile, Form
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
@@ -204,6 +206,32 @@ def init_db():
         breakage INTEGER DEFAULT 0,
         FOREIGN KEY(site_id) REFERENCES sites(id) ON DELETE CASCADE,
         UNIQUE(site_id, date, tool_name)
+    )
+    """)
+
+    # 5c. Daily Updates / Announcements table
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS announcements (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        author TEXT NOT NULL,
+        content TEXT NOT NULL,
+        image_path TEXT,
+        timestamp TEXT NOT NULL
+    )
+    """)
+
+    # 5d. SOP & RCA reports table
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS rca_reports (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        site_id INTEGER,
+        doc_type TEXT NOT NULL,
+        title TEXT NOT NULL,
+        date TEXT NOT NULL,
+        logged_by TEXT,
+        filename TEXT NOT NULL,
+        upload_date TEXT NOT NULL,
+        FOREIGN KEY(site_id) REFERENCES sites(id) ON DELETE CASCADE
     )
     """)
     
@@ -939,7 +967,132 @@ def delete_daily_tool_entry(req: DeleteDailyToolRequest):
         conn.close()
         raise HTTPException(status_code=500, detail=str(e))
 
-# Mount static folder
+# Initialize Upload folders
+UPLOAD_DIR = "uploads"
+os.makedirs(os.path.join(UPLOAD_DIR, "rca"), exist_ok=True)
+os.makedirs(os.path.join(UPLOAD_DIR, "announcements"), exist_ok=True)
+
+# ----------------- RCA & SOP DOCUMENTS ENDPOINTS -----------------
+@app.post("/api/rca")
+async def upload_rca_report(
+    title: str = Form(...),
+    site_id: int = Form(...),
+    doc_type: str = Form(...),
+    date: str = Form(...),
+    logged_by: str = Form(...),
+    file: UploadFile = File(...)
+):
+    conn = get_db_conn()
+    cursor = conn.cursor()
+    try:
+        ext = os.path.splitext(file.filename)[1]
+        unique_filename = f"{uuid.uuid4()}{ext}"
+        filepath = os.path.join(UPLOAD_DIR, "rca", unique_filename)
+        
+        with open(filepath, "wb") as buffer:
+            shutil.copyfileobj(file.file, buffer)
+            
+        upload_date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        
+        cursor.execute("""
+        INSERT INTO rca_reports (site_id, doc_type, title, date, logged_by, filename, upload_date)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+        """, (site_id, doc_type, title, date, logged_by, unique_filename, upload_date))
+        conn.commit()
+        conn.close()
+        return {"status": "success", "message": "Document uploaded successfully"}
+    except Exception as e:
+        conn.close()
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/rca")
+def get_rca_reports():
+    conn = get_db_conn()
+    cursor = conn.cursor()
+    try:
+        cursor.execute("""
+        SELECT r.*, s.name as site_name
+        FROM rca_reports r
+        LEFT JOIN sites s ON r.site_id = s.id
+        ORDER BY r.upload_date DESC
+        """)
+        rows = [dict(row) for row in cursor.fetchall()]
+        conn.close()
+        return rows
+    except Exception as e:
+        conn.close()
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.delete("/api/rca/{doc_id}")
+def delete_rca_report(doc_id: int):
+    conn = get_db_conn()
+    cursor = conn.cursor()
+    try:
+        cursor.execute("SELECT filename FROM rca_reports WHERE id = ?", (doc_id,))
+        row = cursor.fetchone()
+        if not row:
+            conn.close()
+            raise HTTPException(status_code=404, detail="Document not found")
+        
+        filename = row["filename"]
+        filepath = os.path.join(UPLOAD_DIR, "rca", filename)
+        if os.path.exists(filepath):
+            os.remove(filepath)
+            
+        cursor.execute("DELETE FROM rca_reports WHERE id = ?", (doc_id,))
+        conn.commit()
+        conn.close()
+        return {"status": "success", "message": "Document deleted successfully"}
+    except Exception as e:
+        conn.close()
+        raise HTTPException(status_code=500, detail=str(e))
+
+# ----------------- ANNOUNCEMENTS FEED ENDPOINTS -----------------
+@app.post("/api/announcements")
+async def post_announcement(
+    author: str = Form(...),
+    content: str = Form(...),
+    image: Optional[UploadFile] = File(None)
+):
+    conn = get_db_conn()
+    cursor = conn.cursor()
+    try:
+        image_filename = None
+        if image and image.filename:
+            ext = os.path.splitext(image.filename)[1]
+            image_filename = f"{uuid.uuid4()}{ext}"
+            filepath = os.path.join(UPLOAD_DIR, "announcements", image_filename)
+            with open(filepath, "wb") as buffer:
+                shutil.copyfileobj(image.file, buffer)
+                
+        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        cursor.execute("""
+        INSERT INTO announcements (author, content, image_path, timestamp)
+        VALUES (?, ?, ?, ?)
+        """, (author, content, image_filename, timestamp))
+        conn.commit()
+        conn.close()
+        return {"status": "success", "message": "Announcement posted successfully"}
+    except Exception as e:
+        conn.close()
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/announcements")
+def get_announcements():
+    conn = get_db_conn()
+    cursor = conn.cursor()
+    try:
+        cursor.execute("SELECT * FROM announcements ORDER BY timestamp DESC")
+        rows = [dict(row) for row in cursor.fetchall()]
+        conn.close()
+        return rows
+    except Exception as e:
+        conn.close()
+        raise HTTPException(status_code=500, detail=str(e))
+
+# Mount static folders
+app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
+
 static_dir = os.path.join(os.path.dirname(__file__), "static")
 if not os.path.exists(static_dir):
     os.makedirs(static_dir)

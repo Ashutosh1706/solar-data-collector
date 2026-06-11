@@ -32,6 +32,8 @@ function initApp() {
         { name: "ReportsSearch", fn: initReportsSearch },
         { name: "MonthlySummary", fn: initMonthlySummary },
         { name: "DailyToolSheet", fn: initDailyToolSheet },
+        { name: "RcaPortal", fn: initRcaPortal },
+        { name: "Announcements", fn: initAnnouncements },
         { name: "LoadConfigData", fn: loadConfigData },
         { name: "ProcessSpecificModals", fn: initProcessSpecificModals },
         { name: "MobileMenu", fn: initMobileMenu }
@@ -110,6 +112,12 @@ function initAppRouting() {
                 loadHistoryTable();
             } else if (target === "maintenance-view") {
                 loadMaintenanceComments();
+            } else if (target === "home-view") {
+                loadDashboardData();
+            } else if (target === "rca-view") {
+                loadRcaDocuments();
+            } else if (target === "announcements-view") {
+                loadAnnouncements();
             }
         });
     });
@@ -137,6 +145,7 @@ function loadConfigData() {
             const monthlyMachine = document.getElementById("monthly-machine");
             
             const dailyToolSite = document.getElementById("daily-tool-site");
+            const rcaSiteSelect = document.getElementById("rca-site-select");
             
             // Save selected values to restore them after populating
             const prevSelectSite = selectSite ? selectSite.value : "";
@@ -150,6 +159,7 @@ function loadConfigData() {
             const prevMonthlySite = monthlySite ? monthlySite.value : "";
             const prevMonthlyMachine = monthlyMachine ? monthlyMachine.value : "";
             const prevDailyToolSite = dailyToolSite ? dailyToolSite.value : "";
+            const prevRcaSite = rcaSiteSelect ? rcaSiteSelect.value : "";
  
             // Reset dropdowns safely
             if (selectSite) selectSite.innerHTML = `<option value="">-- Choose Site --</option>`;
@@ -166,6 +176,7 @@ function loadConfigData() {
             if (monthlyMachine) monthlyMachine.innerHTML = `<option value="">All Machines</option>`;
             
             if (dailyToolSite) dailyToolSite.innerHTML = `<option value="">-- Choose Site --</option>`;
+            if (rcaSiteSelect) rcaSiteSelect.innerHTML = `<option value="">-- Choose Site --</option>`;
             
             data.sites.forEach(site => {
                 const opt = `<option value="${site.id}">${site.name}</option>`;
@@ -177,6 +188,7 @@ function loadConfigData() {
                 if (maintSiteSelect) maintSiteSelect.innerHTML += opt;
                 if (monthlySite) monthlySite.innerHTML += opt;
                 if (dailyToolSite) dailyToolSite.innerHTML += opt;
+                if (rcaSiteSelect) rcaSiteSelect.innerHTML += opt;
             });
             
             // Restore values and trigger sync
@@ -194,6 +206,9 @@ function loadConfigData() {
             }
             if (dailyToolSite && prevDailyToolSite) {
                 dailyToolSite.value = prevDailyToolSite;
+            }
+            if (rcaSiteSelect && prevRcaSite) {
+                rcaSiteSelect.value = prevRcaSite;
             }
         })
         .catch(err => console.error("Error loading configurations:", err));
@@ -966,7 +981,8 @@ function loadHistoryTable() {
                         document.getElementById("select-shift").value = el.getAttribute("data-shift");
                         document.getElementById("input-date").value = el.getAttribute("data-date");
                         
-                        document.querySelector('.nav-btn[data-target="entry-view"]').click();
+              // Default open homepage on application start
+    document.querySelector('.nav-btn[data-target="home-view"]').click();
                         document.getElementById("btn-load-sheet").click();
                     }, 100);
                 });
@@ -2591,30 +2607,504 @@ function compileExcelHtml(title, metadata, headers, rows, footerRows = null) {
 }
 
 function initMobileMenu() {
-    const toggleBtn = document.getElementById("mobile-menu-toggle");
+    const mobileToggle = document.getElementById("mobile-menu-toggle");
     const sidebar = document.querySelector(".sidebar");
+    const navButtons = document.querySelectorAll(".nav-btn");
     
-    if (toggleBtn && sidebar) {
-        toggleBtn.addEventListener("click", (e) => {
+    if (mobileToggle && sidebar) {
+        mobileToggle.addEventListener("click", (e) => {
             e.stopPropagation();
             sidebar.classList.toggle("active");
         });
         
-        // Close sidebar if user clicks outside of it on mobile
+        // Close sidebar when clicking menu links on mobile
+        navButtons.forEach(btn => {
+            btn.addEventListener("click", () => {
+                sidebar.classList.remove("active");
+            });
+        });
+        
+        // Close sidebar when clicking outside on mobile
         document.addEventListener("click", (e) => {
-            if (window.innerWidth <= 768 && sidebar.classList.contains("active") && !sidebar.contains(e.target) && e.target !== toggleBtn) {
+            if (sidebar.classList.contains("active") && !sidebar.contains(e.target) && e.target !== mobileToggle) {
                 sidebar.classList.remove("active");
             }
         });
+    }
+}
 
-        // Close sidebar when clicking menu buttons on mobile
-        const navBtns = document.querySelectorAll(".nav-btn");
-        navBtns.forEach(btn => {
-            btn.addEventListener("click", () => {
-                if (window.innerWidth <= 768) {
-                    sidebar.classList.remove("active");
+// ==========================================================================
+// NEW VIEWS LOGIC: HOME, RCA/SOP, & ANNOUNCEMENTS
+// ==========================================================================
+
+let chartProduction = null;
+let chartBreakage = null;
+let chartDowntime = null;
+
+function loadDashboardData() {
+    fetch(`${API_BASE}/api/analytics/dashboard`)
+        .then(res => res.json())
+        .then(data => {
+            // 1. Calculate KPIs
+            let totalProd = 0;
+            let totalBroken = 0;
+            let totalRejected = 0;
+            let totalDowntime = 0;
+
+            data.site_performance.forEach(s => {
+                totalProd += s.total_prod || 0;
+                totalBroken += s.total_broken || 0;
+                totalRejected += s.total_rejected || 0;
+            });
+
+            data.downtime_reasons.forEach(d => {
+                totalDowntime += d.minutes || 0;
+            });
+
+            const totalGood = totalProd - totalBroken - totalRejected;
+            const avgBreakage = totalGood > 0 ? (totalBroken / totalGood) * 100 : 0;
+
+            // Update UI
+            document.getElementById("kpi-total-production").textContent = totalProd.toLocaleString();
+            document.getElementById("kpi-total-good").textContent = totalGood.toLocaleString();
+            document.getElementById("kpi-avg-breakage").textContent = avgBreakage.toFixed(2) + "%";
+            document.getElementById("kpi-total-downtime").textContent = totalDowntime.toLocaleString() + " min";
+
+            // 2. Render Charts
+            renderDashboardCharts(data);
+
+            // 3. Load latest announcements widget
+            loadHomeAnnouncements();
+        })
+        .catch(err => console.error("Error loading dashboard metrics:", err));
+}
+
+function renderDashboardCharts(data) {
+    const ctxProd = document.getElementById("chart-site-production").getContext("2d");
+    const ctxYield = document.getElementById("chart-yield-trends").getContext("2d");
+    const ctxDowntime = document.getElementById("chart-downtime-causes").getContext("2d");
+
+    // Destory existing charts
+    if (chartProduction) chartProduction.destroy();
+    if (chartBreakage) chartBreakage.destroy();
+    if (chartDowntime) chartDowntime.destroy();
+
+    // Chart 1: Site Production
+    const labelsProd = data.site_performance.map(s => s.site_name.replace(" Solar", "").replace(" Energies", ""));
+    const datasetProd = data.site_performance.map(s => s.total_prod);
+
+    chartProduction = new Chart(ctxProd, {
+        type: 'bar',
+        data: {
+            labels: labelsProd,
+            datasets: [{
+                label: 'Total Production (Wafers)',
+                data: datasetProd,
+                backgroundColor: 'rgba(6, 182, 212, 0.4)',
+                borderColor: 'var(--primary-cyan)',
+                borderWidth: 1.5,
+                borderRadius: 4
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false }
+            },
+            scales: {
+                y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: 'var(--text-secondary)' } },
+                x: { grid: { display: false }, ticks: { color: 'var(--text-secondary)' } }
+            }
+        }
+    });
+
+    // Chart 2: Breakage Trends (by Date)
+    const labelsTrends = data.yield_trends.map(t => t.date);
+    const datasetBreakage = data.yield_trends.map(t => t.avg_breakage);
+
+    chartBreakage = new Chart(ctxYield, {
+        type: 'line',
+        data: {
+            labels: labelsTrends,
+            datasets: [{
+                label: 'Avg Breakage %',
+                data: datasetBreakage,
+                borderColor: 'var(--primary-red)',
+                backgroundColor: 'rgba(239, 68, 68, 0.05)',
+                borderWidth: 2,
+                fill: true,
+                tension: 0.3
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: 'var(--text-secondary)' } },
+                x: { grid: { display: false }, ticks: { color: 'var(--text-secondary)' } }
+            }
+        }
+    });
+
+    // Chart 3: Downtime Causes
+    const labelsDowntime = data.downtime_reasons.slice(0, 5).map(d => d.reason);
+    const datasetDowntime = data.downtime_reasons.slice(0, 5).map(d => d.minutes);
+
+    chartDowntime = new Chart(ctxDowntime, {
+        type: 'doughnut',
+        data: {
+            labels: labelsDowntime,
+            datasets: [{
+                data: datasetDowntime,
+                backgroundColor: [
+                    'rgba(249, 115, 22, 0.6)', // Orange
+                    'rgba(6, 182, 212, 0.6)',  // Cyan
+                    'rgba(239, 68, 68, 0.6)',  // Red
+                    'rgba(168, 85, 247, 0.6)', // Purple
+                    'rgba(234, 179, 8, 0.6)'   // Yellow
+                ],
+                borderColor: 'var(--card-bg)',
+                borderWidth: 2
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'right',
+                    labels: { color: 'var(--text-secondary)', font: { size: 10 } }
                 }
+            }
+        }
+    });
+}
+
+function loadHomeAnnouncements() {
+    fetch(`${API_BASE}/api/announcements`)
+        .then(res => res.json())
+        .then(announcements => {
+            const feed = document.getElementById("home-announcements-feed");
+            if (!feed) return;
+            feed.innerHTML = "";
+
+            if (announcements.length === 0) {
+                feed.innerHTML = `<div class="text-muted" style="font-size: 12px; text-align: center; margin-top: 20px;">No announcements posted yet.</div>`;
+                return;
+            }
+
+            announcements.slice(0, 3).forEach(a => {
+                const card = `
+                    <div class="mini-announcement-card">
+                        <div class="mini-announcement-header">
+                            <span class="mini-announcement-author">${escapeHTML(a.author)}</span>
+                            <span class="mini-announcement-time">${formatDateString(a.timestamp)}</span>
+                        </div>
+                        <div class="mini-announcement-text">${escapeHTML(a.content)}</div>
+                    </div>
+                `;
+                feed.innerHTML += card;
+            });
+        })
+        .catch(err => console.error("Error loading widget announcements:", err));
+}
+
+// ----------------- SOP & RCA DOCUMENTS LOGIC -----------------
+let documentsList = [];
+let currentDocFilter = "ALL";
+
+function initRcaPortal() {
+    const uploadForm = document.getElementById("rca-upload-form");
+    if (uploadForm) {
+        uploadForm.addEventListener("submit", (e) => {
+            e.preventDefault();
+            const formData = new FormData();
+            formData.append("site_id", document.getElementById("rca-site-select").value);
+            formData.append("doc_type", document.getElementById("rca-doc-type").value);
+            formData.append("title", document.getElementById("rca-title-input").value);
+            formData.append("date", document.getElementById("rca-date-input").value);
+            formData.append("logged_by", document.getElementById("rca-logged-input").value);
+            formData.append("file", document.getElementById("rca-file-input").files[0]);
+
+            fetch(`${API_BASE}/api/rca`, {
+                method: 'POST',
+                body: formData
+            })
+            .then(res => res.json())
+            .then(data => {
+                showToast("Document uploaded successfully!", "success");
+                uploadForm.reset();
+                loadRcaDocuments();
+            })
+            .catch(err => {
+                console.error("Upload error:", err);
+                showToast("Failed to upload document", "error");
             });
         });
     }
+
+    // Filters
+    const filterAll = document.getElementById("btn-doc-filter-all");
+    const filterSop = document.getElementById("btn-doc-filter-sop");
+    const filterRca = document.getElementById("btn-doc-filter-rca");
+
+    if (filterAll) {
+        filterAll.addEventListener("click", () => {
+            setActiveDocFilter("ALL", filterAll);
+        });
+    }
+    if (filterSop) {
+        filterSop.addEventListener("click", () => {
+            setActiveDocFilter("SOP", filterSop);
+        });
+    }
+    if (filterRca) {
+        filterRca.addEventListener("click", () => {
+            setActiveDocFilter("RCA", filterRca);
+        });
+    }
+}
+
+function setActiveDocFilter(filter, activeBtn) {
+    currentDocFilter = filter;
+    const buttons = [
+        document.getElementById("btn-doc-filter-all"),
+        document.getElementById("btn-doc-filter-sop"),
+        document.getElementById("btn-doc-filter-rca")
+    ];
+    buttons.forEach(btn => {
+        if (btn) {
+            btn.classList.remove("active");
+            btn.style.background = "#131922";
+            btn.style.borderColor = "#2a3447";
+            btn.style.color = "var(--text-primary)";
+        }
+    });
+
+    if (activeBtn) {
+        activeBtn.classList.add("active");
+        activeBtn.style.background = "var(--primary-cyan)";
+        activeBtn.style.color = "#000";
+    }
+    renderDocumentsList();
+}
+
+function loadRcaDocuments() {
+    fetch(`${API_BASE}/api/rca`)
+        .then(res => res.json())
+        .then(data => {
+            documentsList = data;
+            renderDocumentsList();
+        })
+        .catch(err => console.error("Error loading documents:", err));
+}
+
+function renderDocumentsList() {
+    const tbody = document.getElementById("rca-table-body");
+    if (!tbody) return;
+    tbody.innerHTML = "";
+
+    const filtered = documentsList.filter(doc => {
+        if (currentDocFilter === "ALL") return true;
+        return doc.doc_type === currentDocFilter;
+    });
+
+    if (filtered.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6" class="text-muted" style="text-align: center;">No documents in library.</td></tr>`;
+        return;
+    }
+
+    filtered.forEach(doc => {
+        const typeBadge = doc.doc_type === "SOP" 
+            ? `<span class="doc-badge doc-badge-sop">SOP</span>` 
+            : `<span class="doc-badge doc-badge-rca">RCA</span>`;
+
+        const row = `
+            <tr>
+                <td>${typeBadge}</td>
+                <td><strong class="text-cyan">${escapeHTML(doc.title)}</strong></td>
+                <td>${escapeHTML(doc.site_name || "Unknown Site")}</td>
+                <td>${escapeHTML(doc.logged_by || "-")}</td>
+                <td>${doc.date}</td>
+                <td>
+                    <div style="display: flex; gap: 6px;">
+                        <a href="/uploads/rca/${doc.filename}" download="${doc.title}" class="secondary-btn btn-sm" style="padding: 4px 8px; font-size: 10px; background: rgba(0, 240, 255, 0.05); border-color: rgba(0, 240, 255, 0.2); color: var(--primary-cyan);">
+                            <i class="fa-solid fa-download"></i>
+                        </a>
+                        <button onclick="deleteRcaDocument(${doc.id})" class="secondary-btn btn-sm text-red" style="padding: 4px 8px; font-size: 10px; border-color: rgba(255, 51, 102, 0.2); background: rgba(255, 51, 102, 0.02);">
+                            <i class="fa-solid fa-trash"></i>
+                        </button>
+                    </div>
+                </td>
+            </tr>
+        `;
+        tbody.innerHTML += row;
+    });
+}
+
+function deleteRcaDocument(docId) {
+    if (!confirm("Are you sure you want to delete this document?")) return;
+    
+    fetch(`${API_BASE}/api/rca/${docId}`, { method: 'DELETE' })
+        .then(res => res.json())
+        .then(() => {
+            showToast("Document deleted successfully!", "success");
+            loadRcaDocuments();
+        })
+        .catch(err => {
+            console.error("Delete error:", err);
+            showToast("Failed to delete document", "error");
+        });
+}
+
+// ----------------- ANNOUNCEMENTS STREAM LOGIC -----------------
+function initAnnouncements() {
+    const postForm = document.getElementById("announcement-post-form");
+    const textarea = document.getElementById("announce-content");
+    const countSpan = document.getElementById("announce-char-count");
+
+    if (textarea && countSpan) {
+        textarea.addEventListener("input", () => {
+            countSpan.textContent = textarea.value.length;
+        });
+    }
+
+    if (postForm) {
+        postForm.addEventListener("submit", (e) => {
+            e.preventDefault();
+            const formData = new FormData();
+            formData.append("author", document.getElementById("announce-author").value);
+            formData.append("content", document.getElementById("announce-content").value);
+            
+            const fileEl = document.getElementById("announce-image");
+            if (fileEl && fileEl.files.length > 0) {
+                formData.append("image", fileEl.files[0]);
+            }
+
+            fetch(`${API_BASE}/api/announcements`, {
+                method: 'POST',
+                body: formData
+            })
+            .then(res => res.json())
+            .then(() => {
+                showToast("Announcement published!", "success");
+                postForm.reset();
+                if (countSpan) countSpan.textContent = "0";
+                loadAnnouncements();
+            })
+            .catch(err => {
+                console.error("Error posting announcement:", err);
+                showToast("Failed to publish announcement", "error");
+            });
+        });
+    }
+}
+
+function loadAnnouncements() {
+    fetch(`${API_BASE}/api/announcements`)
+        .then(res => res.json())
+        .then(announcements => {
+            const container = document.getElementById("announcements-feed-container");
+            if (!container) return;
+            container.innerHTML = "";
+
+            if (announcements.length === 0) {
+                container.innerHTML = `<div class="text-muted" style="text-align: center; padding: 40px 20px;">No announcements in stream yet. Be the first to share one!</div>`;
+                return;
+            }
+
+            announcements.forEach(a => {
+                const initials = a.author ? a.author.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() : "OP";
+                let mediaHtml = "";
+                if (a.image_path) {
+                    mediaHtml = `
+                        <div class="announcement-media">
+                            <img src="/uploads/announcements/${a.image_path}" alt="Post media" onclick="window.open(this.src)" style="cursor: pointer;">
+                        </div>
+                    `;
+                }
+
+                const card = `
+                    <div class="announcement-card">
+                        <div class="announcement-avatar">${initials}</div>
+                        <div class="announcement-body">
+                            <div class="announcement-header">
+                                <span class="announcement-author">${escapeHTML(a.author)}</span>
+                                <span class="announcement-time">${formatDateString(a.timestamp)}</span>
+                            </div>
+                            <div class="announcement-text">${escapeHTML(a.content)}</div>
+                            ${mediaHtml}
+                        </div>
+                    </div>
+                `;
+                container.innerHTML += card;
+            });
+        })
+        .catch(err => console.error("Error loading stream:", err));
+}
+
+// Helpers
+function formatDateString(timestampStr) {
+    try {
+        const parts = timestampStr.split(' ');
+        const dateParts = parts[0].split('-');
+        const timeParts = parts[1].split(':');
+        
+        const dateObj = new Date(
+            parseInt(dateParts[0]),
+            parseInt(dateParts[1]) - 1,
+            parseInt(dateParts[2]),
+            parseInt(timeParts[0]),
+            parseInt(timeParts[1]),
+            parseInt(timeParts[2] || "0")
+        );
+        
+        return dateObj.toLocaleDateString(undefined, { 
+            month: 'short', 
+            day: 'numeric', 
+            year: 'numeric' 
+        }) + " " + dateObj.toLocaleTimeString(undefined, { 
+            hour: '2-digit', 
+            minute: '2-digit' 
+        });
+    } catch (e) {
+        return timestampStr;
+    }
+}
+
+function escapeHTML(str) {
+    if (!str) return "";
+    return str.replace(/[&<>'"]/g, 
+        tag => ({
+            '&': '&amp;',
+            '<': '&lt;',
+            '>': '&gt;',
+            "'": '&#39;',
+            '"': '&quot;'
+        }[tag] || tag)
+    );
+}
+
+function showToast(message, type = "success") {
+    const alertEl = document.createElement("div");
+    alertEl.style.position = "fixed";
+    alertEl.style.bottom = "20px";
+    alertEl.style.right = "20px";
+    alertEl.style.background = type === "success" ? "var(--primary-green)" : "var(--primary-red)";
+    alertEl.style.color = "#000";
+    alertEl.style.padding = "12px 24px";
+    alertEl.style.borderRadius = "8px";
+    alertEl.style.boxShadow = "0 8px 30px rgba(0,0,0,0.5)";
+    alertEl.style.fontFamily = "var(--font-outfit)";
+    alertEl.style.fontWeight = "600";
+    alertEl.style.zIndex = "9999";
+    alertEl.style.transition = "all 0.3s ease";
+    alertEl.textContent = message;
+    
+    document.body.appendChild(alertEl);
+    setTimeout(() => {
+        alertEl.style.opacity = "0";
+        setTimeout(() => alertEl.remove(), 300);
+    }, 3000);
 }
